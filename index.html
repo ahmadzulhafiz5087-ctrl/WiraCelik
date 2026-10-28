@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Wira Cilik Matematik - Tambah & Tolak</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Font: Fredoka & Nunito untuk tema kartun ceria -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            fredoka: ['Fredoka', 'sans-serif'],
+            nunito: ['Nunito', 'sans-serif'],
+          },
+          colors: {
+            sunny: {
+              100: '#FFFBEB',
+              300: '#FDE68A',
+              400: '#FBBF24',
+              500: '#F59E0B',
+            },
+            pastelBlue: '#E0F2FE',
+            pastelPink: '#FCE7F3',
+            pastelGreen: '#DCFCE7',
+          },
+          boxShadow: {
+            'bubbly': '0 8px 0px rgba(0, 0, 0, 0.15)',
+            'bubbly-active': '0 2px 0px rgba(0, 0, 0, 0.2)',
+            'card': '0 12px 24px -4px rgba(0, 0, 0, 0.1)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Fredoka', 'Nunito', sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      background: linear-gradient(135deg, #BAE6FD 0%, #FEF08A 50%, #BBF7D0 100%);
+      min-height: 100vh;
+    }
+
+    /* Bouncy Button Styling */
+    .btn-bubbly {
+      transition: all 0.12s ease-in-out;
+      transform: translateY(0);
+    }
+    .btn-bubbly:active {
+      transform: translateY(6px);
+      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15) !important;
+    }
+
+    /* Animations */
+    @keyframes pulse-gentle {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    .animate-pulse-gentle {
+      animation: pulse-gentle 1.8s infinite ease-in-out;
+    }
+
+    @keyframes pop-in {
+      0% { transform: scale(0.7); opacity: 0; }
+      70% { transform: scale(1.08); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-pop {
+      animation: pop-in 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes star-jump {
+      0% { transform: scale(1) rotate(0deg); }
+      50% { transform: scale(1.3) rotate(15deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+    .animate-star {
+      animation: star-jump 0.5s ease-in-out;
+    }
+
+    /* Interactive visual counters item */
+    .counter-item {
+      transition: transform 0.15s ease, background-color 0.15s;
+    }
+    .counter-item:active {
+      transform: scale(1.25);
+    }
+
+    /* Confetti Canvas */
+    #confettiCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center justify-between p-3 sm:p-6 min-h-screen">
+  <canvas id="confettiCanvas"></canvas>
+
+  <!-- Top Navigation & Header -->
+  <header class="w-full max-w-xl flex items-center justify-between bg-white/80 backdrop-blur-md px-4 py-2 sm:py-3 rounded-3xl shadow-md border-2 border-white/60 mb-3">
+    <!-- Brand Title -->
+    <div class="flex items-center space-x-2">
+      <span class="text-3xl sm:text-4xl">🦁</span>
+      <div>
+        <h1 class="text-lg sm:text-2xl font-bold text-amber-600 tracking-wide leading-tight">Wira Cilik Matematik</h1>
+        <p class="text-xs sm:text-sm text-slate-500 font-medium hidden sm:block">Latihan Tambah & Tolak (1 - 20)</p>
+      </div>
+    </div>
+
+    <!-- Audio & Mode Badges -->
+    <div class="flex items-center space-x-2">
+      <!-- Stars Counter -->
+      <div class="flex items-center bg-amber-100 border border-amber-300 px-3 py-1 rounded-full text-amber-700 font-bold text-sm sm:text-base shadow-sm">
+        <span class="mr-1 text-lg">⭐</span>
+        <span id="starScore">0</span>
+      </div>
+
+      <!-- Sound Toggle -->
+      <button id="soundToggleBtn" aria-label="Kawal Bunyi" class="w-10 h-10 flex items-center justify-center bg-sky-100 text-sky-700 hover:bg-sky-200 rounded-full border border-sky-300 shadow-sm transition active:scale-95 text-xl">
+        🔊
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Game Container -->
+  <main class="w-full max-w-xl flex-1 flex flex-col justify-center">
+
+    <!-- SCREEN 1: MODES SELECTION -->
+    <section id="screenMode" class="bg-white/90 backdrop-blur-lg rounded-3xl p-6 sm:p-8 shadow-card border-4 border-amber-200 text-center animate-pop">
+      <div class="mb-5">
+        <div class="inline-block p-3 bg-amber-100 rounded-full mb-2">
+          <span class="text-5xl">🎒</span>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-800">Mari Belajar Mengira!</h2>
+        <p class="text-slate-600 text-sm sm:text-base mt-1">Pilih jenis latihan yang kamu mahu main:</p>
+      </div>
+
+      <div class="space-y-3 sm:space-y-4">
+        <!-- Tambah -->
+        <button onclick="startGame('add')" class="w-full py-4 px-6 bg-gradient-to-r from-emerald-400 to-teal-500 text-white rounded-2xl font-extrabold text-lg sm:text-xl shadow-bubbly hover:brightness-105 active:shadow-bubbly-active btn-bubbly flex items-center justify-between border-b-4 border-teal-700">
+          <div class="flex items-center space-x-3">
+            <span class="text-3xl bg-white/30 rounded-xl p-1.5">➕</span>
+            <div class="text-left">
+              <div>Tambah Sahaja</div>
+              <div class="text-xs font-normal text-emerald-100">Contoh: 5 + 4 = 9</div>
+            </div>
+          </div>
+          <span class="text-2xl">➔</span>
+        </button>
+
+        <!-- Tolak -->
+        <button onclick="startGame('sub')" class="w-full py-4 px-6 bg-gradient-to-r from-sky-400 to-blue-500 text-white rounded-2xl font-extrabold text-lg sm:text-xl shadow-bubbly hover:brightness-105 active:shadow-bubbly-active btn-bubbly flex items-center justify-between border-b-4 border-blue-700">
+          <div class="flex items-center space-x-3">
+            <span class="text-3xl bg-white/30 rounded-xl p-1.5">➖</span>
+            <div class="text-left">
+              <div>Tolak Sahaja</div>
+              <div class="text-xs font-normal text-sky-100">Contoh: 12 - 5 = 7</div>
+            </div>
+          </div>
+          <span class="text-2xl">➔</span>
+        </button>
+
+        <!-- Campur -->
+        <button onclick="startGame('mixed')" class="w-full py-4 px-6 bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-2xl font-extrabold text-lg sm:text-xl shadow-bubbly hover:brightness-105 active:shadow-bubbly-active btn-bubbly flex items-center justify-between border-b-4 border-orange-700">
+          <div class="flex items-center space-x-3">
+            <span class="text-3xl bg-white/30 rounded-xl p-1.5">🎯</span>
+            <div class="text-left">
+              <div>Campur (Tambah & Tolak)</div>
+              <div class="text-xs font-normal text-amber-100">Cabaran Hebat 10 Soalan!</div>
+            </div>
+          </div>
+          <span class="text-2xl">➔</span>
+        </button>
+      </div>
+
+      <div class="mt-6 flex items-center justify-center space-x-2 text-xs sm:text-sm text-slate-500 font-medium">
+        <span>Sesuai untuk kanak-kanak umur 6 - 8 tahun</span>
+        <span>•</span>
+        <span>Nombor 1 - 20</span>
+      </div>
+    </section>
+
+    <!-- SCREEN 2: GAMEPLAY PLAYING -->
+    <section id="screenQuiz" class="hidden flex-col gap-3">
+      <!-- Progress Bar & Question tracker -->
+      <div class="bg-white/90 backdrop-blur-md rounded-2xl p-3 shadow-md border-2 border-white flex items-center justify-between gap-3">
+        <div class="flex items-center space-x-2">
+          <span id="badgeMode" class="text-xs font-bold uppercase tracking-wider px-2.5 py-1 bg-amber-100 text-amber-800 rounded-lg">Tambah</span>
+          <span class="text-xs sm:text-sm text-slate-500 font-bold" id="questionCounter">Soalan 1 / 10</span>
+        </div>
+        <div class="flex-1 max-w-[180px] bg-slate-200 h-3.5 rounded-full overflow-hidden p-0.5">
+          <div id="progressBar" class="bg-gradient-to-r from-amber-400 to-emerald-400 h-full rounded-full transition-all duration-300 w-[10%]"></div>
+        </div>
+        <button onclick="quitToHome()" class="text-xs text-rose-500 hover:text-rose-700 font-bold px-2 py-1 rounded-md border border-rose-200 bg-rose-50 hover:bg-rose-100">
+          Tamat
+        </button>
+      </div>
+
+      <!-- Main Question Card -->
+      <div class="bg-white rounded-3xl p-5 sm:p-7 shadow-card border-4 border-amber-300 flex flex-col items-center justify-center text-center relative overflow-hidden">
+        <!-- Floating mascot / emoji decoration -->
+        <div id="questionEmoji" class="text-3xl sm:text-4xl mb-1 animate-pulse-gentle">🍎</div>
+
+        <!-- The Equation -->
+        <div class="flex items-center justify-center gap-2 sm:gap-4 my-2 text-4xl sm:text-6xl font-black text-slate-800 tracking-wider">
+          <span id="num1Text" class="text-indigo-600 bg-indigo-50 px-3 py-1 rounded-2xl border-2 border-indigo-200">8</span>
+          <span id="opText" class="text-amber-500">+</span>
+          <span id="num2Text" class="text-teal-600 bg-teal-50 px-3 py-1 rounded-2xl border-2 border-teal-200">5</span>
+          <span class="text-slate-400">=</span>
+          <span id="boxAnswer" class="w-14 h-14 sm:w-20 sm:h-20 flex items-center justify-center border-4 border-dashed border-amber-400 rounded-2xl text-amber-500 bg-amber-50 font-black animate-pulse">?</span>
+        </div>
+
+        <!-- Hint Toggle Button -->
+        <div class="mt-3">
+          <button id="hintToggleBtn" onclick="toggleHint()" class="inline-flex items-center gap-1.5 px-4 py-2 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 text-xs sm:text-sm font-extrabold rounded-full border-2 border-yellow-300 shadow-sm transition active:scale-95">
+            <span>💡</span>
+            <span id="hintBtnText">Bantuan Mengira (Pembilang)</span>
+          </button>
+        </div>
+
+        <!-- Scaffolding: Visual Counters Container -->
+        <div id="hintBox" class="w-full mt-4 p-3 bg-amber-50/90 rounded-2xl border-2 border-amber-200 hidden text-left transition-all">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-xs font-bold text-amber-900" id="hintInstruction">Sentuh objek untuk membilang:</span>
+            <span class="text-[11px] text-amber-700 bg-amber-200/70 px-2 py-0.5 rounded-md" id="hintSumCount">0 dikira</span>
+          </div>
+          <!-- Objects display container -->
+          <div id="hintObjects" class="flex flex-wrap items-center justify-center gap-2 p-2 bg-white rounded-xl border border-amber-200 min-h-[50px]">
+            <!-- Items injected by JS -->
+          </div>
+        </div>
+
+        <!-- Instant Feedback Message -->
+        <div id="feedbackBox" class="mt-3 min-h-[32px] flex items-center justify-center text-sm sm:text-base font-extrabold transition-all">
+          <span id="feedbackText" class="text-slate-400 font-medium">Pilih jawapan yang betul di bawah! 👇</span>
+        </div>
+      </div>
+
+      <!-- 4 Answer Options Grid -->
+      <div id="optionsGrid" class="grid grid-cols-2 gap-3 sm:gap-4 mt-1">
+        <!-- 4 buttons dynamically inserted -->
+      </div>
+    </section>
+
+    <!-- SCREEN 3: RESULT & CELEBRATION -->
+    <section id="screenResult" class="hidden bg-white/95 backdrop-blur-lg rounded-3xl p-6 sm:p-8 shadow-card border-4 border-yellow-300 text-center animate-pop">
+      <div id="trophyIcon" class="text-6xl sm:text-7xl mb-2 animate-pulse-gentle">🏆</div>
+      <h2 id="resultTitle" class="text-2xl sm:text-3xl font-black text-slate-800">Hebat Sekali!</h2>
+      <p id="resultSubtitle" class="text-sm sm:text-base text-slate-600 mt-1 mb-4">Kamu telah menamatkan kesemua 10 soalan!</p>
+
+      <!-- Star Rating Visual -->
+      <div id="starsVisual" class="flex justify-center items-center gap-2 text-4xl sm:text-5xl my-4">
+        <!-- Stars will be inserted -->
+      </div>
+
+      <!-- Score Card -->
+      <div class="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl p-4 max-w-xs mx-auto mb-6 shadow-sm">
+        <div class="text-xs uppercase font-extrabold text-amber-700 tracking-wider">Markah Keseluruhan</div>
+        <div class="text-4xl sm:text-5xl font-black text-amber-600 my-1">
+          <span id="finalCorrectCount">10</span> / 10
+        </div>
+        <div id="scoreEncouragement" class="text-xs sm:text-sm font-bold text-slate-600">
+          Kamu memang wira matematik sejati! 🎉
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <button onclick="restartSameMode()" class="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-emerald-400 to-teal-500 text-white font-extrabold text-base sm:text-lg rounded-2xl shadow-bubbly btn-bubbly active:shadow-bubbly-active border-b-4 border-teal-700 flex items-center justify-center gap-2">
+          <span>🔄</span>
+          <span>Main Lagi</span>
+        </button>
+        <button onclick="quitToHome()" class="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-sky-400 to-blue-500 text-white font-extrabold text-base sm:text-lg rounded-2xl shadow-bubbly btn-bubbly active:shadow-bubbly-active border-b-4 border-blue-700 flex items-center justify-center gap-2">
+          <span>🏠</span>
+          <span>Menu Utama</span>
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer Tip -->
+  <footer class="w-full max-w-xl text-center py-2 text-xs font-semibold text-slate-600/90 mt-2">
+    💡 Petua: Gunakan butang bantuan jika memerlukan bimbingan visual untuk mengira objek satu persatu!
+  </footer>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    /* =====================================================================
+       1. WEB AUDIO API SOUND GENERATOR (Synthesized Sound Effects)
+       ===================================================================== */
+    let audioCtx = null;
+    let isSoundOn = true;
+
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+          audioCtx = new AudioContext();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    // Play a gentle pop tone when buttons are tapped
+    function playPopSound() {
+      if (!isSoundOn) return;
+      try {
+        initAudio();
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(450, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(700, audioCtx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.08);
+      } catch (e) {
+        console.warn("Audio error:", e);
+      }
+    }
+
+    // Play cheerful chime for correct answer
+    function playCorrectSound() {
+      if (!isSoundOn) return;
+      try {
+        initAudio();
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime;
+        // 3-note ascending cheerful chime: C5 (523Hz), E5 (659Hz), G5 (784Hz), C6 (1046Hz)
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+          gain.gain.setValueAtTime(0.2, now + idx * 0.09);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.22);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now + idx * 0.09);
+          osc.stop(now + idx * 0.09 + 0.25);
+        });
+      } catch (e) {}
+    }
+
+    // Play gentle low boing for incorrect answer
+    function playWrongSound() {
+      if (!isSoundOn) return;
+      try {
+        initAudio();
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime;
+        const notes = [320, 240];
+        notes.forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+          gain.gain.setValueAtTime(0.22, now + idx * 0.12);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.2);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now + idx * 0.12);
+          osc.stop(now + idx * 0.12 + 0.22);
+        });
+      } catch (e) {}
+    }
+
+    // Play triumphant victory fanfare
+    function playFanfareSound() {
+      if (!isSoundOn) return;
+      try {
+        initAudio();
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime;
+        const fanfareNotes = [
+          { f: 523.25, d: 0.12 }, // C5
+          { f: 659.25, d: 0.12 }, // E5
+          { f: 783.99, d: 0.12 }, // G5
+          { f: 1046.5, d: 0.35 }  // C6
+        ];
+        let offset = 0;
+        fanfareNotes.forEach((n) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(n.f, now + offset);
+          gain.gain.setValueAtTime(0.25, now + offset);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + offset + n.d);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now + offset);
+          osc.stop(now + offset + n.d);
+          offset += n.d * 0.85;
+        });
+      } catch (e) {}
+    }
+
+    // Sound toggle listener
+    const soundToggleBtn = document.getElementById('soundToggleBtn');
+    soundToggleBtn.addEventListener('click', () => {
+      initAudio();
+      isSoundOn = !isSoundOn;
+      soundToggleBtn.textContent = isSoundOn ? '🔊' : '🔇';
+      soundToggleBtn.classList.toggle('text-slate-400', !isSoundOn);
+      soundToggleBtn.classList.toggle('bg-slate-100', !isSoundOn);
+    });
+
+    /* =====================================================================
+       2. GAME STATE & CONSTANTS
+       ===================================================================== */
+    const TOTAL_QUESTIONS = 10;
+    const EMOJI_ITEMS = ['🍎', '⭐️', '🧁', '🚗', '🐥', '🍬', '🎈', '🍓', '🥕', '🍦'];
+
+    let currentMode = 'add'; // 'add', 'sub', 'mixed'
+    let currentQuestionIndex = 0;
+    let correctAnswersCount = 0;
+    let questionsList = [];
+    let currentQuestion = null;
+    let canAnswer = true;
+    let hintOpened = false;
+
+    // Domestic praises for kids in Malay
+    const PRAISES = [
+      'Wah, pandai sungguh! 🌟',
+      'Hebat! Tepat sekali! 👏',
+      'Bijak! Teruskan usaha! ✨',
+      'Syabas! Jawapan betul! 🎉',
+      'Terbaiklah adik wira! 🚀'
+    ];
+
+    const GENTLE_PROMPTS = [
+      'Hampir tepat! Cuba semak semula ya.',
+      'Tak apa, mari kita cuba lagi!',
+      'Gunakan pembilang untuk membantu!',
+      'Bertenang dan kira satu persatu ya.'
+    ];
+
+    /* =====================================================================
+       3. QUESTION GENERATION LOGIC (Tahun 1: Lingkungan 1 hingga 20)
+       ===================================================================== */
+    function generateQuestions(mode) {
+      const questions = [];
+
+      for (let i = 0; i < TOTAL_QUESTIONS; i++) {
+        let op = '+';
+        if (mode === 'sub') {
+          op = '-';
+        } else if (mode === 'mixed') {
+          op = Math.random() > 0.5 ? '+' : '-';
+        }
+
+        let num1, num2, correctAns;
+
+        if (op === '+') {
+          // Addition within 1 to 20
+          // Keep sum between 2 and 20, num1 and num2 at least 1
+          correctAns = Math.floor(Math.random() * 19) + 2; // 2 to 20
+          num1 = Math.floor(Math.random() * (correctAns - 1)) + 1; // 1 to correctAns-1
+          num2 = correctAns - num1;
+        } else {
+          // Subtraction within 1 to 20
+          // num1 between 2 and 20, num2 <= num1, answer >= 1
+          num1 = Math.floor(Math.random() * 19) + 2; // 2 to 20
+          num2 = Math.floor(Math.random() * (num1 - 1)) + 1; // 1 to num1 - 1
+          correctAns = num1 - num2;
+        }
+
+        // Generate 3 unique distractors close to correctAns (range 1 to 20)
+        const optionsSet = new Set([correctAns]);
+        const offsets = [-2, -1, 1, 2, 3, -3, 4, -4];
+        // Shuffle offsets
+        offsets.sort(() => Math.random() - 0.5);
+
+        for (const offset of offsets) {
+          const candidate = correctAns + offset;
+          if (candidate >= 1 && candidate <= 20 && !optionsSet.has(candidate)) {
+            optionsSet.add(candidate);
+            if (optionsSet.size === 4) break;
+          }
+        }
+
+        // Fallback if needed
+        while (optionsSet.size < 4) {
+          const randNum = Math.floor(Math.random() * 20) + 1;
+          optionsSet.add(randNum);
+        }
+
+        const options = Array.from(optionsSet).sort(() => Math.random() - 0.5);
+        const randomEmoji = EMOJI_ITEMS[Math.floor(Math.random() * EMOJI_ITEMS.length)];
+
+        questions.push({
+          num1,
+          num2,
+          op,
+          correctAns,
+          options,
+          emoji: randomEmoji
+        });
+      }
+
+      return questions;
+    }
+
+    /* =====================================================================
+       4. GAME NAVIGATION & SCREENS
+       ===================================================================== */
+    const screenMode = document.getElementById('screenMode');
+    const screenQuiz = document.getElementById('screenQuiz');
+    const screenResult = document.getElementById('screenResult');
+
+    function startGame(mode) {
+      initAudio();
+      playPopSound();
+      currentMode = mode;
+      currentQuestionIndex = 0;
+      correctAnswersCount = 0;
+      questionsList = generateQuestions(mode);
+
+      // Update badge
+      const badge = document.getElementById('badgeMode');
+      if (mode === 'add') {
+        badge.textContent = 'Latihan: Tambah (+)';
+        badge.className = 'text-xs font-bold uppercase tracking-wider px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg';
+      } else if (mode === 'sub') {
+        badge.textContent = 'Latihan: Tolak (-)';
+        badge.className = 'text-xs font-bold uppercase tracking-wider px-2.5 py-1 bg-sky-100 text-sky-800 rounded-lg';
+      } else {
+        badge.textContent = 'Latihan: Campur (+ & -)';
+        badge.className = 'text-xs font-bold uppercase tracking-wider px-2.5 py-1 bg-amber-100 text-amber-800 rounded-lg';
+      }
+
+      screenMode.classList.add('hidden');
+      screenResult.classList.add('hidden');
+      screenQuiz.classList.remove('hidden');
+      screenQuiz.classList.add('flex');
+
+      loadQuestion(0);
+    }
+
+    function quitToHome() {
+      playPopSound();
+      stopConfetti();
+      screenQuiz.classList.remove('flex');
+      screenQuiz.classList.add('hidden');
+      screenResult.classList.add('hidden');
+      screenMode.classList.remove('hidden');
+    }
+
+    function restartSameMode() {
+      stopConfetti();
+      startGame(currentMode);
+    }
+
+    /* =====================================================================
+       5. QUESTION DISPLAY & INTERACTIVITY
+       ===================================================================== */
+    function loadQuestion(index) {
+      canAnswer = true;
+      currentQuestion = questionsList[index];
+      currentQuestionIndex = index;
+
+      // Update Progress
+      document.getElementById('questionCounter').textContent = `Soalan ${index + 1} / ${TOTAL_QUESTIONS}`;
+      const percent = ((index + 1) / TOTAL_QUESTIONS) * 100;
+      document.getElementById('progressBar').style.width = `${percent}%`;
+      document.getElementById('starScore').textContent = correctAnswersCount;
+
+      // Reset card visual
+      document.getElementById('questionEmoji').textContent = currentQuestion.emoji;
+      document.getElementById('num1Text').textContent = currentQuestion.num1;
+      document.getElementById('opText').textContent = currentQuestion.op;
+      document.getElementById('num2Text').textContent = currentQuestion.num2;
+
+      const boxAnswer = document.getElementById('boxAnswer');
+      boxAnswer.textContent = '?';
+      boxAnswer.className = 'w-14 h-14 sm:w-20 sm:h-20 flex items-center justify-center border-4 border-dashed border-amber-400 rounded-2xl text-amber-500 bg-amber-50 font-black animate-pulse';
+
+      // Feedback
+      const feedbackText = document.getElementById('feedbackText');
+      feedbackText.textContent = 'Pilih jawapan yang betul di bawah! 👇';
+      feedbackText.className = 'text-slate-500 font-bold';
+
+      // Reset Hint State
+      hintOpened = false;
+      const hintBox = document.getElementById('hintBox');
+      hintBox.classList.add('hidden');
+      document.getElementById('hintBtnText').textContent = 'Bantuan Mengira (Pembilang)';
+
+      // Render Options
+      const optionsGrid = document.getElementById('optionsGrid');
+      optionsGrid.innerHTML = '';
+
+      // Color themes for buttons
+      const colors = [
+        { bg: 'bg-emerald-50 hover:bg-emerald-100', border: 'border-emerald-400', text: 'text-emerald-700', active: 'border-b-emerald-600' },
+        { bg: 'bg-sky-50 hover:bg-sky-100', border: 'border-sky-400', text: 'text-sky-700', active: 'border-b-sky-600' },
+        { bg: 'bg-amber-50 hover:bg-amber-100', border: 'border-amber-400', text: 'text-amber-700', active: 'border-b-amber-600' },
+        { bg: 'bg-purple-50 hover:bg-purple-100', border: 'border-purple-400', text: 'text-purple-700', active: 'border-b-purple-600' }
+      ];
+
+      currentQuestion.options.forEach((optValue, i) => {
+        const c = colors[i % colors.length];
+        const btn = document.createElement('button');
+        btn.className = `w-full py-4 sm:py-5 px-4 ${c.bg} ${c.text} border-3 ${c.border} rounded-2xl font-black text-2xl sm:text-4xl shadow-bubbly btn-bubbly border-b-4 ${c.active} flex items-center justify-center transition`;
+        btn.setAttribute('data-val', optValue);
+        btn.innerHTML = `<span>${optValue}</span>`;
+        btn.onclick = () => selectAnswer(optValue, btn);
+        optionsGrid.appendChild(btn);
+      });
+    }
+
+    /* =====================================================================
+       6. ANSWER EVALUATION & FEEDBACK
+       ===================================================================== */
+    function selectAnswer(selectedValue, btnElement) {
+      if (!canAnswer) return;
+      canAnswer = false;
+
+      const isCorrect = selectedValue === currentQuestion.correctAns;
+      const boxAnswer = document.getElementById('boxAnswer');
+      const feedbackText = document.getElementById('feedbackText');
+      const starScore = document.getElementById('starScore');
+
+      boxAnswer.classList.remove('animate-pulse');
+
+      if (isCorrect) {
+        // Correct answer
+        playCorrectSound();
+        correctAnswersCount++;
+        starScore.textContent = correctAnswersCount;
+        starScore.parentElement.classList.add('animate-star');
+        setTimeout(() => starScore.parentElement.classList.remove('animate-star'), 500);
+
+        boxAnswer.textContent = selectedValue;
+        boxAnswer.className = 'w-14 h-14 sm:w-20 sm:h-20 flex items-center justify-center border-4 border-emerald-500 rounded-2xl text-emerald-600 bg-emerald-100 font-black animate-pop';
+
+        btnElement.classList.remove('bg-emerald-50', 'bg-sky-50', 'bg-amber-50', 'bg-purple-50');
+        btnElement.classList.add('bg-emerald-400', 'text-white', 'border-emerald-600', 'scale-105');
+
+        const randomPraise = PRAISES[Math.floor(Math.random() * PRAISES.length)];
+        feedbackText.textContent = randomPraise;
+        feedbackText.className = 'text-emerald-600 font-black text-base sm:text-lg animate-pop';
+
+        setTimeout(() => {
+          proceedNext();
+        }, 1300);
+
+      } else {
+        // Wrong answer
+        playWrongSound();
+
+        boxAnswer.textContent = selectedValue;
+        boxAnswer.className = 'w-14 h-14 sm:w-20 sm:h-20 flex items-center justify-center border-4 border-rose-400 rounded-2xl text-rose-600 bg-rose-50 font-black';
+
+        btnElement.classList.add('bg-rose-100', 'border-rose-400', 'text-rose-700', 'opacity-70');
+
+        const randomPrompt = GENTLE_PROMPTS[Math.floor(Math.random() * GENTLE_PROMPTS.length)];
+        feedbackText.textContent = `${randomPrompt} (Jawapan betul: ${currentQuestion.correctAns})`;
+        feedbackText.className = 'text-orange-600 font-extrabold text-xs sm:text-sm';
+
+        // Highlight the correct button so the kid learns immediately
+        const allButtons = document.querySelectorAll('#optionsGrid button');
+        allButtons.forEach(b => {
+          if (parseInt(b.getAttribute('data-val')) === currentQuestion.correctAns) {
+            b.classList.remove('bg-emerald-50', 'bg-sky-50', 'bg-amber-50', 'bg-purple-50');
+            b.classList.add('bg-emerald-200', 'border-emerald-500', 'ring-4', 'ring-emerald-300');
+          }
+        });
+
+        // Automatically open the visual counter to explain clearly!
+        if (!hintOpened) {
+          toggleHint(true);
+        }
+
+        setTimeout(() => {
+          proceedNext();
+        }, 2500);
+      }
+    }
+
+    function proceedNext() {
+      if (currentQuestionIndex + 1 < TOTAL_QUESTIONS) {
+        loadQuestion(currentQuestionIndex + 1);
+      } else {
+        finishGame();
+      }
+    }
+
+    /* =====================================================================
+       7. VISUAL COUNTER (SCAFFOLDING / PEMBILANG BERGAMBAR)
+       ===================================================================== */
+    function toggleHint(forceOpen = false) {
+      playPopSound();
+      const hintBox = document.getElementById('hintBox');
+      const hintBtnText = document.getElementById('hintBtnText');
+
+      if (forceOpen) {
+        hintOpened = true;
+      } else {
+        hintOpened = !hintOpened;
+      }
+
+      if (hintOpened) {
+        hintBox.classList.remove('hidden');
+        hintBtnText.textContent = 'Tutup Pembilang';
+        renderVisualCounters();
+      } else {
+        hintBox.classList.add('hidden');
+        hintBtnText.textContent = 'Bantuan Mengira (Pembilang)';
+      }
+    }
+
+    function renderVisualCounters() {
+      const container = document.getElementById('hintObjects');
+      const instruction = document.getElementById('hintInstruction');
+      const countLabel = document.getElementById('hintSumCount');
+      container.innerHTML = '';
+
+      const { num1, num2, op, emoji, correctAns } = currentQuestion;
+      let touchedCount = 0;
+
+      if (op === '+') {
+        instruction.textContent = `Kira kesemua ${emoji} di bawah: (${num1} + ${num2})`;
+        countLabel.textContent = `0 / ${correctAns} dibilang`;
+
+        // Group 1
+        const g1 = document.createElement('div');
+        g1.className = 'flex flex-wrap items-center justify-center gap-1.5 p-2 bg-indigo-50/70 border border-indigo-200 rounded-xl';
+        for (let i = 1; i <= num1; i++) {
+          const item = createCounterItem(emoji, i);
+          g1.appendChild(item);
+        }
+
+        // Plus symbol
+        const plusSign = document.createElement('span');
+        plusSign.className = 'text-2xl font-black text-amber-500 mx-1';
+        plusSign.textContent = '+';
+
+        // Group 2
+        const g2 = document.createElement('div');
+        g2.className = 'flex flex-wrap items-center justify-center gap-1.5 p-2 bg-teal-50/70 border border-teal-200 rounded-xl';
+        for (let i = 1; i <= num2; i++) {
+          const item = createCounterItem(emoji, num1 + i);
+          g2.appendChild(item);
+        }
+
+        container.appendChild(g1);
+        container.appendChild(plusSign);
+        container.appendChild(g2);
+
+      } else {
+        // Subtraction
+        instruction.textContent = `Mula dengan ${num1} ${emoji}, buang ${num2} yang berpangkah (❌):`;
+        countLabel.textContent = `Tinggal ${correctAns} ${emoji}`;
+
+        const g = document.createElement('div');
+        g.className = 'flex flex-wrap items-center justify-center gap-2 p-2 bg-rose-50/60 border border-rose-200 rounded-xl w-full';
+
+        // Remaining items (correct count)
+        for (let i = 1; i <= correctAns; i++) {
+          const item = createCounterItem(emoji, i);
+          g.appendChild(item);
+        }
+
+        // Subtracted items (crossed out)
+        for (let j = 1; j <= num2; j++) {
+          const crossed = document.createElement('div');
+          crossed.className = 'relative flex flex-col items-center justify-center p-1.5 bg-rose-200/50 rounded-lg border border-rose-300 opacity-60';
+          crossed.innerHTML = `
+            <span class="text-2xl">${emoji}</span>
+            <span class="absolute text-xl font-bold text-rose-600">❌</span>
+            <span class="text-[9px] font-bold text-rose-700 mt-0.5">Tolak</span>
+          `;
+          g.appendChild(crossed);
+        }
+
+        container.appendChild(g);
+      }
+
+      function createCounterItem(symbol, number) {
+        const el = document.createElement('div');
+        el.className = 'counter-item flex flex-col items-center justify-center p-1.5 bg-white rounded-lg border border-slate-200 shadow-xs cursor-pointer active:scale-110';
+        el.innerHTML = `
+          <span class="text-2xl pointer-events-none">${symbol}</span>
+          <span class="text-[10px] font-bold text-slate-600 pointer-events-none">${number}</span>
+        `;
+        el.onclick = () => {
+          playPopSound();
+          el.classList.toggle('bg-amber-200');
+          el.classList.toggle('border-amber-400');
+          if (el.classList.contains('bg-amber-200')) {
+            touchedCount++;
+          } else {
+            touchedCount = Math.max(0, touchedCount - 1);
+          }
+          countLabel.textContent = `${touchedCount} dipilih`;
+        };
+        return el;
+      }
+    }
+
+    /* =====================================================================
+       8. GAME COMPLETION & REWARDS
+       ===================================================================== */
+    function finishGame() {
+      playFanfareSound();
+      startConfetti();
+
+      screenQuiz.classList.remove('flex');
+      screenQuiz.classList.add('hidden');
+      screenResult.classList.remove('hidden');
+
+      document.getElementById('finalCorrectCount').textContent = correctAnswersCount;
+
+      const starsVisual = document.getElementById('starsVisual');
+      const resultTitle = document.getElementById('resultTitle');
+      const scoreEncouragement = document.getElementById('scoreEncouragement');
+      const trophyIcon = document.getElementById('trophyIcon');
+
+      let starHtml = '';
+      if (correctAnswersCount >= 9) {
+        // 3 Stars - Excellent
+        trophyIcon.textContent = '🏆';
+        resultTitle.textContent = 'Cemerlang & Luar Biasa!';
+        scoreEncouragement.textContent = 'Hebat sekali! Kamu memang pakar matematik pintar! 🌟';
+        starHtml = '<span class="text-amber-400">⭐</span><span class="text-amber-400 text-6xl">⭐</span><span class="text-amber-400">⭐</span>';
+      } else if (correctAnswersCount >= 6) {
+        // 2 Stars - Good Job
+        trophyIcon.textContent = '🥇';
+        resultTitle.textContent = 'Syabas & Bagus!';
+        scoreEncouragement.textContent = 'Usaha yang sangat baik! Sedikit lagi untuk dapat markah penuh. 💪';
+        starHtml = '<span class="text-amber-400">⭐</span><span class="text-amber-400 text-6xl">⭐</span><span class="text-slate-300">⭐</span>';
+      } else {
+        // 1 Star - Encouragement
+        trophyIcon.textContent = '🌱';
+        resultTitle.textContent = 'Teruskan Berusaha!';
+        scoreEncouragement.textContent = 'Bagus kerana mencuba! Mari main lagi untuk jadi lebih cekap! 🚀';
+        starHtml = '<span class="text-amber-400 text-6xl">⭐</span><span class="text-slate-300">⭐</span><span class="text-slate-300">⭐</span>';
+      }
+
+      starsVisual.innerHTML = starHtml;
+    }
+
+    /* =====================================================================
+       9. LIGHTWEIGHT CANVAS CONFETTI (No external libraries required)
+       ===================================================================== */
+    const canvas = document.getElementById('confettiCanvas');
+    const ctx = canvas.getContext('2d');
+    let confettiParticles = [];
+    let confettiAnimId = null;
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function startConfetti() {
+      confettiParticles = [];
+      const colors = ['#F59E0B', '#10B981', '#3B82F6', '#EC4899', '#8B5CF6', '#FBBF24'];
+      for (let i = 0; i < 90; i++) {
+        confettiParticles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height - canvas.height,
+          size: Math.random() * 8 + 6,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          vx: Math.random() * 4 - 2,
+          vy: Math.random() * 3 + 2,
+          angle: Math.random() * 360,
+          vAngle: Math.random() * 4 - 2
+        });
+      }
+
+      function updateConfetti() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        confettiParticles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.angle += p.vAngle;
+
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.angle * Math.PI) / 180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.7);
+          ctx.restore();
+
+          if (p.y > canvas.height) {
+            p.y = -20;
+            p.x = Math.random() * canvas.width;
+          }
+        });
+        confettiAnimId = requestAnimationFrame(updateConfetti);
+      }
+
+      cancelAnimationFrame(confettiAnimId);
+      updateConfetti();
+    }
+
+    function stopConfetti() {
+      cancelAnimationFrame(confettiAnimId);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  </script>
+</body>
+</html>
