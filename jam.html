@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Wira Cilik - Kenal Waktu</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Font: Fredoka -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Fredoka', sans-serif;
+      background-color: #EFF6FF; /* Biru pastel */
+      background-image: 
+        radial-gradient(#DBEAFE 10%, transparent 10%), 
+        radial-gradient(#DBEAFE 10%, transparent 10%);
+      background-size: 40px 40px;
+      background-position: 0 0, 20px 20px;
+      min-height: 100vh;
+      -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
+    }
+
+    .btn-hover {
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .btn-hover:active {
+      transform: scale(0.95);
+    }
+
+    /* Animasi Bintang */
+    @keyframes popIn {
+      0% { transform: scale(0); opacity: 0; }
+      80% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .star-pop {
+      animation: popIn 0.5s ease-out forwards;
+    }
+
+    /* Jam Styles */
+    .clock-face {
+      fill: #ffffff;
+      stroke: #93C5FD;
+      stroke-width: 6;
+    }
+    .clock-center {
+      fill: #2563EB;
+    }
+    .hand-hour {
+      stroke: #1E3A8A;
+      stroke-width: 8;
+      stroke-linecap: round;
+      transition: transform 0.5s cubic-bezier(0.4, 2.08, 0.55, 0.44);
+    }
+    .hand-minute {
+      stroke: #EF4444;
+      stroke-width: 5;
+      stroke-linecap: round;
+      transition: transform 0.5s cubic-bezier(0.4, 2.08, 0.55, 0.44);
+    }
+    .clock-number {
+      font-family: 'Fredoka', sans-serif;
+      font-weight: bold;
+      font-size: 16px;
+      fill: #3B82F6;
+      text-anchor: middle;
+      dominant-baseline: central;
+    }
+
+    /* Konfeti Canvas */
+    #confetti-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 50;
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center p-4 sm:p-6">
+  
+  <canvas id="confetti-canvas"></canvas>
+
+  <div class="max-w-3xl w-full w-full flex flex-col relative z-10">
+    
+    <!-- Pengepala (Header) -->
+    <header class="flex justify-between items-center mb-6">
+      <a href="index.html" class="btn-hover bg-white text-blue-600 font-bold py-2 px-4 sm:px-6 rounded-full shadow-md border-2 border-blue-200 flex items-center gap-2 hover:bg-blue-50">
+        <span class="text-xl">🏠</span>
+        <span class="hidden sm:inline">Kembali ke Menu Utama</span>
+        <span class="sm:hidden">Kembali</span>
+      </a>
+      <div class="bg-yellow-100 border-2 border-yellow-400 text-yellow-700 font-bold py-2 px-4 rounded-full shadow-md flex items-center gap-2">
+        <span class="text-xl">⭐</span>
+        <span id="score-display">0 / 10</span>
+      </div>
+    </header>
+
+    <!-- Papan Permainan Utama -->
+    <main id="game-container" class="bg-white border-4 border-blue-300 rounded-[2rem] p-6 sm:p-10 shadow-[0_10px_0_#93C5FD] flex flex-col items-center w-full">
+      
+      <!-- Tajuk & Nombor Soalan -->
+      <h2 class="text-3xl sm:text-4xl font-bold text-blue-800 mb-6 text-center drop-shadow-sm">
+        Soalan <span id="question-number">1</span>
+      </h2>
+
+      <!-- Jam SVG Analog -->
+      <div class="mb-8 relative w-48 h-48 sm:w-64 sm:h-64">
+        <svg viewBox="0 0 120 120" class="w-full h-full drop-shadow-md">
+          <circle cx="60" cy="60" r="55" class="clock-face" />
+          
+          <!-- Nombor Jam (Dijana via JS untuk ketepatan) -->
+          <g id="clock-numbers"></g>
+
+          <!-- Tanda minit (Ticks) -->
+          <g id="clock-ticks"></g>
+
+          <!-- Jarum Jam & Minit -->
+          <!-- origin di 60,60 -->
+          <line id="hour-hand" class="hand-hour" x1="60" y1="60" x2="60" y2="30" transform="rotate(0 60 60)" />
+          <line id="minute-hand" class="hand-minute" x1="60" y1="60" x2="60" y2="15" transform="rotate(0 60 60)" />
+          
+          <!-- Pusat jam -->
+          <circle cx="60" cy="60" r="4" class="clock-center" />
+        </svg>
+      </div>
+
+      <p class="text-2xl sm:text-3xl font-bold text-gray-700 mb-8 text-center">Pukul berapakah ini?</p>
+
+      <!-- Butang Pilihan Jawapan -->
+      <div id="options-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-lg">
+        <!-- Butang akan dijana oleh JavaScript -->
+      </div>
+
+      <!-- Mesej Maklum Balas -->
+      <div id="feedback-message" class="hidden mt-6 text-2xl font-bold text-center px-6 py-3 rounded-full">
+        <!-- Teks akan ditukar di sini -->
+      </div>
+      
+      <!-- Butang Seterusnya -->
+      <button id="next-btn" class="hidden mt-6 btn-hover bg-blue-500 text-white font-bold text-xl py-3 px-10 rounded-full shadow-[0_6px_0_#2563EB] hover:bg-blue-400">
+        Soalan Seterusnya ➔
+      </button>
+
+    </main>
+
+    <!-- Skrin Tamat Permainan -->
+    <div id="end-screen" class="hidden bg-white border-4 border-yellow-300 rounded-[2rem] p-8 sm:p-12 shadow-[0_10px_0_#FDE047] flex flex-col items-center text-center mt-10">
+      <div class="text-7xl mb-4">🏆</div>
+      <h2 class="text-4xl sm:text-5xl font-bold text-amber-600 mb-4">Hebat!</h2>
+      <p class="text-xl sm:text-2xl font-medium text-gray-600 mb-6">Adik berjaya mengumpul:</p>
+      
+      <div class="text-5xl text-yellow-400 mb-8 font-bold drop-shadow-md flex items-center gap-4 justify-center">
+        <span>⭐</span> <span id="final-score" class="text-6xl text-amber-500">10 / 10</span>
+      </div>
+
+      <button onclick="startGame()" class="btn-hover bg-emerald-500 text-white font-bold text-2xl py-4 px-10 rounded-full shadow-[0_6px_0_#059669] hover:bg-emerald-400 flex items-center gap-3">
+        <span>🔄</span> Main Semula
+      </button>
+    </div>
+
+  </div>
+
+  <!-- JavaScript Logik Permainan -->
+  <script>
+    // --- Audio System (Web Audio API) ---
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+
+    function initAudio() {
+      if (!audioCtx) audioCtx = new AudioContext();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playSound(type) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      osc.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      if (type === 'correct') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+        osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+        osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2); // G5
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.5);
+      } else if (type === 'wrong') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+      } else if (type === 'pop') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.1);
+      }
+    }
+
+    // --- Melukis Wajah Jam (SVG) ---
+    function setupClockFace() {
+      const numbersGroup = document.getElementById('clock-numbers');
+      const ticksGroup = document.getElementById('clock-ticks');
+      numbersGroup.innerHTML = '';
+      ticksGroup.innerHTML = '';
+      const radius = 42; // Jarak nombor dari pusat (Pusat: 60,60)
+      const tickRadius = 50; // Jarak titik minit
+      
+      for (let i = 1; i <= 12; i++) {
+        // Sudut dalam radian (30 darjah setiap nombor)
+        const angle = (i * 30 - 90) * (Math.PI / 180);
+        const x = 60 + radius * Math.cos(angle);
+        const y = 60 + radius * Math.sin(angle);
+        
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', x);
+        text.setAttribute('y', y);
+        text.setAttribute('class', 'clock-number');
+        text.textContent = i;
+        numbersGroup.appendChild(text);
+      }
+      
+      for(let i=0; i<60; i++) {
+        const angle = (i * 6 - 90) * (Math.PI / 180);
+        const x1 = 60 + tickRadius * Math.cos(angle);
+        const y1 = 60 + tickRadius * Math.sin(angle);
+        const length = i % 5 === 0 ? 4 : 2; // Tanda lebih besar setiap 5 minit
+        const x2 = 60 + (tickRadius - length) * Math.cos(angle);
+        const y2 = 60 + (tickRadius - length) * Math.sin(angle);
+        
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', x1);
+        line.setAttribute('y1', y1);
+        line.setAttribute('x2', x2);
+        line.setAttribute('y2', y2);
+        line.setAttribute('stroke', i % 5 === 0 ? '#60A5FA' : '#BFDBFE');
+        line.setAttribute('stroke-width', i % 5 === 0 ? '2' : '1');
+        ticksGroup.appendChild(line);
+      }
+    }
+
+    // --- State Permainan ---
+    let currentQuestion = 1;
+    let score = 0;
+    const totalQuestions = 10;
+    let currentAnswer = "";
+    let isAnswered = false;
+
+    // --- Logik Soalan Masa ---
+    function getTimeText(hour, minute) {
+      if (minute === 0) return `Pukul ${hour}`;
+      if (minute === 30) return `Pukul ${hour} dan 30 minit`;
+      return `Pukul ${hour} dan ${minute} minit`;
+    }
+
+    function generateQuestion() {
+      // Sama ada minit 0 atau 30
+      const isHalf = Math.random() > 0.5;
+      const min = isHalf ? 30 : 0;
+      const hour = Math.floor(Math.random() * 12) + 1; // 1 hingga 12
+      
+      const correctAnswer = getTimeText(hour, min);
+      
+      // Update Jarum Jam
+      const hourAngle = (hour % 12) * 30 + (min / 2); // 30 deg per jam, +15 jika 30 minit
+      const minAngle = min * 6; // 6 deg per minit
+      
+      document.getElementById('hour-hand').setAttribute('transform', `rotate(${hourAngle} 60 60)`);
+      document.getElementById('minute-hand').setAttribute('transform', `rotate(${minAngle} 60 60)`);
+
+      // Hasilkan 3 jawapan pengalih perhatian (Distractors)
+      let options = new Set([correctAnswer]);
+      while (options.size < 4) {
+        let rHour = Math.floor(Math.random() * 12) + 1;
+        let rMin = Math.random() > 0.5 ? 30 : 0;
+        options.add(getTimeText(rHour, rMin));
+      }
+
+      // Kocok Array (Fisher-Yates)
+      let optionsArr = Array.from(options);
+      for (let i = optionsArr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [optionsArr[i], optionsArr[j]] = [optionsArr[j], optionsArr[i]];
+      }
+
+      return { correctAnswer, optionsArr };
+    }
+
+    function loadQuestion() {
+      isAnswered = false;
+      document.getElementById('question-number').innerText = currentQuestion;
+      document.getElementById('next-btn').classList.add('hidden');
+      const feedback = document.getElementById('feedback-message');
+      feedback.classList.add('hidden');
+      feedback.className = "hidden mt-6 text-2xl font-bold text-center px-6 py-3 rounded-full"; // reset class
+
+      const qData = generateQuestion();
+      currentAnswer = qData.correctAnswer;
+
+      const container = document.getElementById('options-container');
+      container.innerHTML = ''; // Clear lama
+
+      qData.optionsArr.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.innerText = opt;
+        btn.className = "btn-hover bg-white border-2 border-blue-400 text-blue-700 font-bold text-xl py-4 px-6 rounded-2xl shadow-[0_6px_0_#60A5FA] hover:bg-blue-50 focus:outline-none";
+        btn.onclick = () => handleAnswer(opt, btn);
+        container.appendChild(btn);
+      });
+    }
+
+    function handleAnswer(selectedOpt, btnElement) {
+      if (isAnswered) return; // Elak tekan berkali-kali
+      initAudio();
+      isAnswered = true;
+      const feedback = document.getElementById('feedback-message');
+      feedback.classList.remove('hidden');
+
+      // Tunjukkan betul / salah pada semua butang
+      const allBtns = document.getElementById('options-container').children;
+      for (let b of allBtns) {
+        b.disabled = true; // Kunci butang
+        if (b.innerText === currentAnswer) {
+          b.className = "bg-green-100 border-2 border-green-500 text-green-800 font-bold text-xl py-4 px-6 rounded-2xl shadow-[0_6px_0_#22C55E]";
+        } else if (b === btnElement && selectedOpt !== currentAnswer) {
+          b.className = "bg-red-100 border-2 border-red-500 text-red-800 font-bold text-xl py-4 px-6 rounded-2xl shadow-[0_6px_0_#EF4444] opacity-70";
+        } else {
+          b.classList.add('opacity-50');
+        }
+      }
+
+      if (selectedOpt === currentAnswer) {
+        playSound('correct');
+        score++;
+        document.getElementById('score-display').innerText = `${score} / ${totalQuestions}`;
+        feedback.innerText = "⭐ Tepat Sekali!";
+        feedback.classList.add('bg-green-100', 'text-green-600', 'border-2', 'border-green-300', 'star-pop');
+        triggerConfetti();
+      } else {
+        playSound('wrong');
+        feedback.innerText = "❌ Cuba lagi nanti!";
+        feedback.classList.add('bg-red-100', 'text-red-600', 'border-2', 'border-red-300');
+      }
+
+      // Butang seterusnya
+      const nextBtn = document.getElementById('next-btn');
+      nextBtn.classList.remove('hidden');
+      if (currentQuestion >= totalQuestions) {
+        nextBtn.innerText = "Lihat Keputusan ➔";
+        nextBtn.onclick = showEndScreen;
+      } else {
+        nextBtn.innerText = "Soalan Seterusnya ➔";
+        nextBtn.onclick = () => {
+          playSound('pop');
+          currentQuestion++;
+          loadQuestion();
+        };
+      }
+    }
+
+    function showEndScreen() {
+      playSound('pop');
+      document.getElementById('game-container').classList.add('hidden');
+      document.getElementById('end-screen').classList.remove('hidden');
+      document.getElementById('final-score').innerText = `${score} / ${totalQuestions}`;
+      if(score > 7) {
+        triggerConfetti(true); // Lebih banyak konfeti
+      }
+    }
+
+    function startGame() {
+      initAudio();
+      playSound('pop');
+      currentQuestion = 1;
+      score = 0;
+      document.getElementById('score-display').innerText = `${score} / ${totalQuestions}`;
+      document.getElementById('game-container').classList.remove('hidden');
+      document.getElementById('end-screen').classList.add('hidden');
+      setupClockFace();
+      loadQuestion();
+    }
+
+    // --- Konfeti Sederhana (HTML5 Canvas) ---
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    let particles = [];
+    const colors = ['#fce18a', '#ff726d', '#b48def', '#f4306d', '#6ee7b7', '#3b82f6'];
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    function triggerConfetti(massive = false) {
+      const count = massive ? 150 : 50;
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: canvas.width / 2,
+          y: canvas.height / 2 + 100, // Tembak dari tengah bawah sikit
+          r: Math.random() * 6 + 4,
+          dx: Math.random() * 10 - 5,
+          dy: Math.random() * -10 - 5,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          tilt: Math.floor(Math.random() * 10) - 10,
+          tiltAngleIncrement: (Math.random() * 0.07) + 0.05,
+          tiltAngle: 0
+        });
+      }
+      if(particles.length <= count) {
+        requestAnimationFrame(renderConfetti);
+      }
+    }
+
+    function renderConfetti() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let stillAlive = false;
+      
+      for (let i = 0; i < particles.length; i++) {
+        let p = particles[i];
+        p.tiltAngle += p.tiltAngleIncrement;
+        p.y += (Math.cos(p.tiltAngle) + 1 + p.r / 2) / 2; // graviti perlahan
+        p.x += Math.sin(p.tiltAngle) * 2;
+        p.x += p.dx;
+        p.y += p.dy;
+        p.dy += 0.3; // graviti ke bawah
+        
+        if (p.y <= canvas.height) stillAlive = true;
+
+        ctx.beginPath();
+        ctx.lineWidth = p.r;
+        ctx.strokeStyle = p.color;
+        ctx.moveTo(p.x + p.tilt + p.r, p.y);
+        ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r);
+        ctx.stroke();
+      }
+
+      if (stillAlive) {
+        requestAnimationFrame(renderConfetti);
+      } else {
+        particles = [];
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+
+    // Init apabila sedia
+    window.onload = () => {
+      // Sentuhan awal untuk benarkan audio
+      document.body.addEventListener('click', initAudio, { once: true });
+      document.body.addEventListener('touchstart', initAudio, { once: true });
+      startGame();
+    };
+  </script>
+</body>
+</html>
